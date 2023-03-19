@@ -8,12 +8,17 @@ on my youtube channel!
 
 """
 
+from numpy import spacing
 import pandas as pd
 import torch
 import torch.nn as nn
+from torch.nn.modules import sparse
 from torch.utils import data
 from torch.utils.data import Dataset
 from torch.utils.data import DataLoader
+from nltk.tokenize import word_tokenize
+import nltk
+
 
 class TranslationsDataset(Dataset):
     def __init__(self, translations_path):
@@ -297,13 +302,57 @@ if __name__ == "__main__":
     #    if i>10:
     #       break
     
-    dataloader = DataLoader(dataset, batch_size=2, shuffle=True)
-
+    dataloader = DataLoader(dataset, batch_size=1, shuffle=True)
+    spanish_words1 = set()
+    english_words1 = set()
     for i, (x, y) in enumerate(dataloader):
-        print (f'{x=} , {y=}')
-        if i>0:
-            break
-    print(type(x))
+        #print (f'{x=} , {y=}')
+        spanish_tokens = word_tokenize(y[0], language='spanish')
+        english_tokens = word_tokenize(x[0], language='english')
+        spanish_words1 = spanish_words1.union(spanish_tokens)
+        english_words1 = english_words1.union(english_tokens)
+        #print(spanish_tokens)
+        #print(english_tokens)
+        #if i>0:
+         #   break
+    #print(spanish_words1)
+    #print(english_words1)
+    print(len(spanish_words1))
+    print(len(english_words1))
+    spanish_words = nltk.corpus.cess_esp.words()
+    print(type(spanish_words))
+    print(len(spanish_words))
+
+    spanish_words = set(spanish_words)
+    intersect = spanish_words.intersection(spanish_words1)
+    
+    print(len(intersect))
+    diff_words = spanish_words1 - spanish_words
+    print(f'num of funny words {len(diff_words)=}')
+    print(list(diff_words)[:30])
+
+
+    
+
+
+
+
+
+# Tokenize the sentence
+#tokens = list(tokenize(sentence, lowercase=True))
+# Count the number of unique words in the sentence
+#num_unique_words = len(set(tokens))
+# Define the dictionary size as twice the number of unique words
+#dict_size = 2 * num_unique_words
+# Create the dictionary
+#dictionary = corpora.Dictionary([tokens])
+
+# Convert the sentence to a list of one-hot vectors
+#one_hot_vectors = [dictionary.doc2idx(tokens)]
+#one_hot_vectors = [[idx if idx != -1 else dict_size for idx in vec] for vec in one_hot_vectors]
+
+#print(one_hot_vectors)
+
     
 
 
