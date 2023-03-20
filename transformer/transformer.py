@@ -10,14 +10,16 @@ on my youtube channel!
 
 from numpy import spacing
 import pandas as pd
+
 import torch
 import torch.nn as nn
 from torch.nn.modules import sparse
 from torch.utils import data
 from torch.utils.data import Dataset
 from torch.utils.data import DataLoader
-from nltk.tokenize import word_tokenize
 import nltk
+from nltk.tokenize import word_tokenize
+from nltk.stem import WordNetLemmatizer
 
 
 class TranslationsDataset(Dataset):
@@ -292,43 +294,53 @@ class Transformer(nn.Module):
         return out
 
 
+def init():
+    nltk.download('wordnet')
+
+
+def build_corpuses(dataset):
+    lemmatizer = WordNetLemmatizer()
+    spanish_words = set()
+    english_words = set()
+    lemmatized_spanish_words = set()
+    lemmatized_english_words = set()
+    for i, (x, y) in enumerate(dataset):
+        spanish_tokens = word_tokenize(y, language='spanish')
+        english_tokens = word_tokenize(x, language='english')
+        lemmatized_spanish_tokens = [lemmatizer.lemmatize(token) for token in spanish_tokens]
+        lemmatized_english_tokens = [lemmatizer.lemmatize(token) for token in english_tokens]
+        spanish_words = spanish_words.union(spanish_tokens)
+        english_words = english_words.union(english_tokens)
+        lemmatized_spanish_words = lemmatized_spanish_words.union(lemmatized_spanish_tokens)
+        lemmatized_english_words = lemmatized_english_words.union(lemmatized_english_tokens)    
+    return spanish_words, english_words, lemmatized_spanish_words, lemmatized_english_words  
+        
+
 if __name__ == "__main__":
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    print(device)
+    print(f'running on {device}')
+    init()
     data_path = 'data/data.csv'
     dataset = TranslationsDataset(data_path)
-    #for i, (x, y) in enumerate(dataset):
-    #    print (x, y)
-    #    if i>10:
-    #       break
-    
     dataloader = DataLoader(dataset, batch_size=1, shuffle=True)
-    spanish_words1 = set()
-    english_words1 = set()
-    for i, (x, y) in enumerate(dataloader):
-        #print (f'{x=} , {y=}')
-        spanish_tokens = word_tokenize(y[0], language='spanish')
-        english_tokens = word_tokenize(x[0], language='english')
-        spanish_words1 = spanish_words1.union(spanish_tokens)
-        english_words1 = english_words1.union(english_tokens)
-        #print(spanish_tokens)
-        #print(english_tokens)
-        #if i>0:
-         #   break
-    #print(spanish_words1)
-    #print(english_words1)
-    print(len(spanish_words1))
-    print(len(english_words1))
-    spanish_words = nltk.corpus.cess_esp.words()
-    print(type(spanish_words))
-    print(len(spanish_words))
+    spanish_words, english_words, lemmatized_spanish_words, lemmatized_english_words = build_corpuses(dataset)
+    print(f'Number of spanish words in the translation database {len(spanish_words)}')
+    print(f'Number of english words in the translation database {len(english_words)}')
+    print(f'Number of spanish lemmas in the translation database {len(lemmatized_spanish_words)}')
+    print(f'Number of english lemmas in the translation database {len(lemmatized_english_words)}')
+    
+    spanish_words1 = nltk.corpus.cess_esp.words()
+    print(type(spanish_words1))
+    print(f'Number of spanish words in the corpus {len(spanish_words1)}')
 
-    spanish_words = set(spanish_words)
+    spanish_words1 = set(spanish_words1)
     intersect = spanish_words.intersection(spanish_words1)
     
-    print(len(intersect))
-    diff_words = spanish_words1 - spanish_words
-    print(f'num of funny words {len(diff_words)=}')
+    print(f'num of spanish words that are both in the corpus and in the dataset {len(intersect)}')
+    diff_words = spanish_words - spanish_words1
+    lemmatized_diff_words = lemmatized_spanish_words - spanish_words1
+    print(f'num of spanish words in the dataset that are not in the corpus {len(diff_words)=}')
+    print(f'num of lemmatized spanish words in the dataset that are not in the corpus {len(lemmatized_diff_words)=}')
     print(list(diff_words)[:30])
 
 
