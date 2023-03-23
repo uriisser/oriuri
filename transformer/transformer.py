@@ -314,8 +314,29 @@ def build_corpuses(dataset):
         lemmatized_spanish_words = lemmatized_spanish_words.union(lemmatized_spanish_tokens)
         lemmatized_english_words = lemmatized_english_words.union(lemmatized_english_tokens)    
     return spanish_words, english_words, lemmatized_spanish_words, lemmatized_english_words  
+ # Build dictionary from each lemma found in the dataset to a set of the words that are mapped to this lemma       
+def build_corpuses_dictionaries(dataset):
+    lemmatizer = WordNetLemmatizer()
+    spanish_words_dictionary = {}
+    english_words_dictionary = {}
+    
+    for i, (x, y) in enumerate(dataset):
+        spanish_tokens = word_tokenize(y, language='spanish')
+        english_tokens = word_tokenize(x, language='english')
+        lemmatized_spanish_tokens = [lemmatizer.lemmatize(token) for token in spanish_tokens]
+        lemmatized_english_tokens = [lemmatizer.lemmatize(token) for token in english_tokens]
+        for i, lemmatized_spanish_token in enumerate(lemmatized_spanish_tokens):
+            if lemmatized_spanish_token not in spanish_words_dictionary.keys():
+                spanish_words_dictionary[lemmatized_spanish_token] = set()
+            spanish_words_dictionary[lemmatized_spanish_token].add(spanish_tokens[i])
+        for i, lemmatized_english_token in enumerate(lemmatized_english_tokens):
+            if lemmatized_english_token not in english_words_dictionary.keys():
+                english_words_dictionary[lemmatized_english_token] = set()
+            english_words_dictionary[lemmatized_english_token].add(english_tokens[i])
+   
+            
+    return spanish_words_dictionary, english_words_dictionary  
         
-
 if __name__ == "__main__":
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f'running on {device}')
@@ -342,8 +363,17 @@ if __name__ == "__main__":
     print(f'num of spanish words in the dataset that are not in the corpus {len(diff_words)=}')
     print(f'num of lemmatized spanish words in the dataset that are not in the corpus {len(lemmatized_diff_words)=}')
     print(list(diff_words)[:30])
-
-
+    spanish_words_dictionary, english_words_dictionary = build_corpuses_dictionaries(dataset)
+    for i, key in enumerate(spanish_words_dictionary.keys()):
+        print(key)
+        print(spanish_words_dictionary[key])
+        if i>= 3:
+            break
+    for i, key in enumerate(english_words_dictionary.keys()):
+        print(key)
+        print(english_words_dictionary[key])
+        if i>= 3:
+            break
     
 
 
@@ -391,3 +421,4 @@ if __name__ == "__main__":
     #print(out.shape)
 
 
+   
